@@ -1,0 +1,152 @@
+<!-- Code from d3-graph-gallery.com -->
+<!DOCTYPE html>
+
+<meta charset="UTF-8">
+
+
+
+
+
+<!-- Load d3.js -->
+<script src="http://d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+
+<!-- Create an element where the map will take place -->
+<svg id="my_dataviz" width="1000" height="1000"></svg>
+
+
+<script>
+
+
+// The svg
+var svg = d3.select("svg"),
+  width = +svg.attr("width"),
+  height = +svg.attr("height"),
+  padding =40;
+
+// Map and projection
+var path = d3.geoPath();
+var projection = d3.geoMercator()
+  //.scale(70)
+  //.center([0,20])
+  .translate([width / 2, height / 2]);
+
+// Data and color scale
+var data = d3.map();
+var colorScale = d3.scaleThreshold()
+  .domain([3, 6, 10, 17, 1001])
+  .range(d3.schemeBlues[7]);
+
+// Legend
+var g = svg.append("g")
+    .attr("class", "legendThreshold")
+    .attr("transform", "translate(20,20)");
+g.append("text")
+    .attr("class", "caption")
+    .attr("x", 100)
+    .attr("y", 100)
+var labels = ['<2.29', '2.29 - 5.35', '5.35 - 9.02', '9.02 - 16.13',  '> 16.13'];
+
+//create a new SVG in the body
+const legend = d3.select("body").append('svg')
+//add it with the '.legend' class
+    .attr('class', 'legend')
+    //it should be 14px wide
+    .attr('width', width/24)
+    //and 148px high
+    .attr('height', height/2)
+    //then either select all the 'g's inside the svg
+    //or create placeholders
+    .selectAll('g')
+    //Fill the data into our placeholders in reverse order
+    //This arranges our legend in descending order.
+    //The 'data' here is the items we entered in the 'domain',
+    //in this case [min, max]
+    //We use 'slice()' to create a shallow copy of the array
+    //Since we don't want to modify the original one
+    .data(colorScale.domain().slice().reverse())
+    //Every node in teh data should have a 'g' appended
+    .enter().append('g')
+    //the 'g' should have this attribute
+    .attr("transform", function(d, i) { return "translate(" + 10 + "," + i * 20 + ")"; });
+//Inside every 'legend', insert a rect
+legend.append("rect")
+    //that's 18px wide
+    .attr("width", 18)
+    //and 18px high
+    .attr("height", 18)
+    //then fill it will the color assigned by the scale
+    .style("fill", colorScale);
+legend.append("text")
+   .attr("x", 24)
+   .attr("y", 9)
+   .text(function(d,i) { return labels[i] });
+
+//Adding label
+
+svg.append("text")
+   .attr("x", width/2)
+   .attr("y", padding)
+   .attr("text-anchor", "middle")
+   .style("font-size", "16px")
+   .text("CO2 emissions (metric tons per capita)");
+
+
+
+// Load external data and boot
+d3.queue()
+  .defer(d3.json, "https://raw.githubusercontent.com/skpriya12/Sourcedata/main/worldmap.geojson")
+  .defer(d3.csv, "https://raw.githubusercontent.com/skpriya12/Sourcedata/main/CO2_2020.csv", function(d) { data.set(d.ISO_Code, +d.Total); })
+  .await(ready);
+
+function ready(error, topo) {
+  console.log(topo.features.properties)
+
+  let mouseOver = function(d) {
+    d3.selectAll(".Country")
+      .transition()
+      .duration(200)
+      .style("opacity", .5)
+    d3.select(this)
+      .transition()
+      .duration(200)
+      .style("opacity", 1)
+      .style("stroke", "black")
+  }
+
+  let mouseLeave = function(d) {
+    d3.selectAll(".Country")
+      .transition()
+      .duration(200)
+      .style("opacity", .8)
+    d3.select(this)
+      .transition()
+      .duration(200)
+      .style("stroke", "transparent")
+  }
+
+
+  // Draw the map
+  svg.append("g")
+    .selectAll("path")
+    .data(topo.features)
+    .enter()
+    .append("path")
+      // draw each country
+      .attr("d", d3.geoPath()
+        .projection(projection)
+      )
+      // set the color of each country
+      .attr("fill", function (d) {
+        d.Total = data.get(d.id) || 0;
+        return colorScale(d.Total);
+      })
+      .style("stroke", "transparent")
+      .attr("class", function(d){ return "Country" } )
+      .style("opacity", .8)
+      .on("mouseover", mouseOver )
+      .on("mouseleave", mouseLeave )
+    }
+
+</script>
