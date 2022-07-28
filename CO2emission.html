@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html>
+
+
+<body> 
+
+<div id="Button">
+  <input type="radio" name="maps" value="Total" checked > Total
+  <input type="radio" name="maps" value="Coal" > Coal
+  <input type="radio" name="maps" value="Oil" > Oil
+  <input type="radio" name="maps" value="Gas" > Gas
+  <input type="radio" name="maps" value="Cement" > Cement
+  <input type="radio" name="maps" value="Flaring" > Flaring
+</div>
+
+
+
+<!-- Load d3.js -->
+<script src="http://d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+<!-- Load d3-annotation -->
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+
+<!-- Create an element where the map will take place -->
+<svg id="my_dataviz" width="1200" height="700"></svg>
+
+
+
+<script>
+
+
+// The svg
+var svg = d3.select("svg"),
+  margin = 10,
+  width = +svg.attr("width"),
+  height = +svg.attr("height"),
+  padding =40;
+
+// Define the div for the tooltip
+var div = d3.select("body").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0);  
+
+// Map and projection
+var path = d3.geoPath();
+var projection = d3.geoMercator()
+  .scale(100)
+  .center([0,20])
+  .translate([width / 2, height / 2]);
+
+// Data and color scale
+var data = d3.map();
+console.log(d3.min(data));
+var keys = ['<10', '10 - 100', '100 - 1000', '1000 - 10000',  '> 10000'];
+var keyval = [10, 100, 1000, 10000, 20000];
+//console.log(keyval)
+var colorScale = d3.scaleThreshold()
+  .domain([10, 100, 1000, 10000, 20000])
+  //.domain([0,40000])
+  .range(d3.schemeBlues[5]);
+
+// Add one dot in the legend for each name.
+var size = 20
+svg.selectAll("mydots")
+  .data(keyval)
+  .enter()
+  .append("rect")
+    .attr("x", 200)
+    .attr("y", function(d,i){ return 350 + i*(size+5)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .attr("width", size)
+    .attr("height", size)
+    .style("fill", function(d){ return colorScale(d)})
+
+// Add one dot in the legend for each name.
+svg.selectAll("mylabels")
+  .data(keys)
+  .enter()
+  .append("text")
+    .attr("x", 200 + size*1.2)
+    .attr("y", function(d,i){ return 350 + i*(size+5) + (size/2)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .style("fill", function(d){ return colorScale(d)})
+    .text(function(d){ return d})
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle")    
+
+
+
+// Add title 
+svg.append("text")
+        .attr("x", (width / 2))             
+        .attr("y", margin +5 )
+        .attr("text-anchor", "middle")  
+        .style("font-size", "20px") 
+        .style("text-decoration", "underline")  
+        .text("CO2 emissions 2020 (metric tons)");
+
+
+// Event listener to the radio button
+d3.select("#Button").on("change", update )
+// // callback function
+
+
+// Load external data and boot
+
+
+
+function update() {
+
+  d3.selectAll(".annotation").remove()
+      // For each check box:
+  var radioValue = d3.select('input[name="maps"]:checked').property("value");
+  console.log(radioValue)
+  
+    
+  d3.queue()
+  .defer(d3.json, "https://raw.githubusercontent.com/skpriya12/Sourcedata/main/worldmap.geojson")
+  .defer(d3.csv, "https://raw.githubusercontent.com/skpriya12/Sourcedata/main/CO2_2020.csv", function(d) { 
+      
+  
+
+    data.set(d.ISO_Code, +d[radioValue]);
+   
+    
+    })
+    .await(ready);
+
+
+
+      const Totalannotations = [
+      {
+        note: {
+          label: "Highest Overall CO2 emission",
+          title: "China"
+        },
+        x: projection([103.88361620775093, 36.55506850593301])[0],
+        y: projection([103.88361620775093, 36.55506850593301])[1],
+        dy: -70,
+        dx: 150
+      },
+      {
+        note: {
+          label: "Lowest Overall CO2 emission",
+          title: "Greenland"
+        },
+        x: projection([-41.50018111432651, 74.77048769413567])[0],
+        y: projection([-41.50018111432651, 74.77048769413567])[1],
+        dy: -70,
+        dx: 75
+      }
+      ,{
+        note: {
+          label: "Carbon dioxide emissions associated with energy and industrial production can come from a range of fuel types. The contribution of each of these sources has changed significantly through time, and still shows large differences by region. Carbon dioxide emissions are the primary driver of global climate change. It’s widely recognised that to avoid the worst impacts of climate change, the world needs to urgently reduce emissions.",
+          title: "Total CO2 Emission",
+          wrap: 200
+        },
+        type: d3.annotationLabel,
+        dy: 300,
+        dx: 1010,
+        disable: ["connector"]
+        
+      }
+      ,{
+        note: {
+          label:"Move over the countries for more details",
+
+          wrap: 400
+        },
+        type: d3.annotationLabel,
+        dy: 510,
+        dx: 650,
+        disable: ["connector"]
+        
+      }
+  ]
+  const Coalannotations = [
+      {
+        note: {
+          label: "Highest Coal CO2 emission",
+          title: "China"
+        },
+        x: projection([103.88361620775093, 36.55506850593301])[0],
+        y: projection([103.88361620775093, 36.55506850593301])[1],
+        dy: -70,
+        dx: 150
+      },
+      {
+        note: {
+          label: "Lowest Coal CO2 emission",
+          title: "Uruguay"
+        },
+        x: projection([-56.00327859834271, -32.780904514653685])[0],
+        y: projection([-56.00327859834271, -32.780904514653685])[1],
+        dy: -150,
+        dx: -200
+      }
+      ,{
+        note: {
+          label: "Different fuels emit different amounts of carbon dioxide (CO2) in relation to the energy they produce when burned. It shows annual emissions from coal production by country.",
+          title: "Coal - Carbon Dioxide Emission",
+          wrap: 200
+        },
+        type: d3.annotationLabel,
+
+        dy: 300,
+        dx: 1010,
+        disable: ["connector"]
+      }
+      ,{
+        note: {
+          label:"Move over the countries for more details",
+
+          wrap: 400
+        },
+        type: d3.annotationLabel,
+        dy: 510,
+        dx: 650,
+        disable: ["connector"]
+        
+      }
+  ]
+  const Oilannotations = [
+      {
+        note: {
+          label: "Highest Oil CO2 emission",
+          title: "China"
+        },
+        x: projection([103.88361620775093, 36.55506850593301])[0],
+        y: projection([103.88361620775093, 36.55506850593301])[1],
+        dy: -70,
+        dx: 150
+      },
+      {
+        note: {
+          label: "Lowest Oil CO2 emission",
+          title: "Vanuatu"
+        },
+        x: projection([167.0737512503053, -15.542677299285128])[0],
+        y: projection([167.0737512503053, -15.542677299285128])[1],
+        dy: 200,
+        dx: 50
+      }
+      ,{
+        note: {
+          label: "Different fuels emit different amounts of carbon dioxide (CO2) in relation to the energy they produce when burned. It shows annual emissions from oil production by country.",
+          title: "Oil - Carbon Dioxide Emission",
+          wrap: 200
+        },
+        type: d3.annotationLabel,
+
+        dy: 300,
+        dx: 1010,
+        disable: ["connector"]
+      }
+      ,{
+        note: {
+          label:"Move over the countries for more details",
+
+          wrap: 400
+        },
+        type: d3.annotationLabel,
+        dy: 510,
+        dx: 650,
+        disable: ["connector"]
+        
+      }
+  ]
+  const Gasannotations = [
+      {
+        note: {
+          label: "Highest Gas CO2 emission",
+          title: "USA"
+        },
+        x: projection([-112.59943833351191, 45.705629532237396])[0],
+        y: projection([-112.59943833351191, 45.705629532237396])[1],
+        dy: -70,
+        dx: -150
+      },
+      {
+        note: {
+          label: "Lowest Gas CO2 emission",
+          title: "Cyprus"
+        },
+        x: projection([33.03955387093977, 34.90706080017199])[0],
+        y: projection([33.03955387093977, 34.90706080017199])[1],
+        dy: -200,
+        dx: 50
+      }
+      ,{
+        note: {
+          label: "Different fuels emit different amounts of carbon dioxide (CO2) in relation to the energy they produce when burned. It shows annual emissions from gas production by country.",
+          title: "Gas - Carbon Dioxide Emission",
+          wrap: 200
+        },
+        type: d3.annotationLabel,
+
+        dy: 300,
+        dx: 1010,
+        disable: ["connector"]
+      }
+      ,{
+        note: {
+          label:"Move over the countries for more details",
+
+          wrap: 400
+        },
+        type: d3.annotationLabel,
+        dy: 510,
+        dx: 650,
+        disable: ["connector"]
+        
+      }
+  ]
+  const Cementannotations = [
+      {
+        note: {
+          label: "Highest Cement CO2 emission",
+          title: "China"
+        },
+        x: projection([103.88361620775093, 36.55506850593301])[0],
+        y: projection([103.88361620775093, 36.55506850593301])[1],
+        dy: -70,
+        dx: 150
+      },
+      {
+        note: {
+          label: "Lowest Cement CO2 emission",
+          title: "Botswana"
+        },
+        x: projection([23.773081475874164, -22.099711410350633])[0],
+        y: projection([23.773081475874164, -22.099711410350633])[1],
+        dy: -100,
+        dx: -300
+      }
+      ,{
+        note: {
+          label: "Different fuels emit different amounts of carbon dioxide (CO2) in relation to the energy they produce when burned. It shows annual emissions from cement production by country.",
+          title: "Cement - Carbon Dioxide Emission",
+          wrap: 200
+        },
+        type: d3.annotationLabel,
+
+        dy: 300,
+        dx: 1010,
+        disable: ["connector"]
+      }
+      ,{
+        note: {
+          label:"Move over the countries for more details",
+
+          wrap: 400
+        },
+        type: d3.annotationLabel,
+        dy: 510,
+        dx: 650,
+        disable: ["connector"]
+        
+      }
+  ]
+  const Flaringannotations = [
+      {
+        note: {
+          label: "Highest Flaring CO2 emission",
+          title: "USA"
+        },
+        x: projection([-112.59943833351191, 45.705629532237396])[0],
+        y: projection([1-112.59943833351191, 45.705629532237396])[1],
+        dy: -70,
+        dx: -150
+      },
+      {
+        note: {
+          label: "Lowest Flaring CO2 emission",
+          title: "Latvia"
+        },
+        x: projection([24.833295923942824, 56.80717516493818])[0],
+        y: projection([24.833295923942824, 56.80717516493818])[1],
+        dy: -150,
+        dx: 70
+      }
+      ,{
+        note: {
+          label: "Different fuels emit different amounts of carbon dioxide (CO2) in relation to the energy they produce when burned. It shows annual emissions from flarring production by country.",
+          title: "Flaring - Carbon Dioxide Emission",
+          wrap: 200
+        },
+        type: d3.annotationLabel,
+
+        dy: 300,
+        dx: 1010,
+        disable: ["connector"]
+      }
+      ,{
+        note: {
+          label:"Move over the countries for more details",
+
+          wrap: 400
+        },
+        type: d3.annotationLabel,
+        dy: 510,
+        dx: 650,
+        disable: ["connector"]
+        
+      }
+  ]
+    if (radioValue == "Total")
+    {
+        // Add annotation to the chart
+    var makeAnnotations = d3.annotation()
+      .annotations(Totalannotations)
+      svg.append("g")
+      .append("g")
+      .call(makeAnnotations)
+    }
+
+    else if(radioValue == "Coal")
+    {
+        // Add annotation to the chart
+    var makeAnnotations = d3.annotation()
+      .annotations(Coalannotations)
+      svg.append("g")
+      .append("g")
+      .call(makeAnnotations)
+    }
+    else if(radioValue == "Oil")
+    {
+        // Add annotation to the chart
+    var makeAnnotations = d3.annotation()
+      .annotations(Oilannotations)
+      svg.append("g")
+      .append("g")
+      .call(makeAnnotations)
+    }
+    else if(radioValue == "Gas")
+    {
+        // Add annotation to the chart
+    var makeAnnotations = d3.annotation()
+      .annotations(Gasannotations)
+      svg.append("g")
+      .append("g")
+      .call(makeAnnotations)
+    }
+    else if(radioValue == "Cement")
+    {
+        // Add annotation to the chart
+    var makeAnnotations = d3.annotation()
+      .annotations(Cementannotations)
+      svg.append("g")
+      .append("g")
+      .call(makeAnnotations)
+    }
+    else if(radioValue == "Flaring")
+    {
+        // Add annotation to the chart
+    var makeAnnotations = d3.annotation()
+      .annotations(Flaringannotations)
+      svg.append("g")
+      .append("g")
+      .call(makeAnnotations)
+    }
+    
+
+}
+
+
+
+  
+
+function ready(error, topo ,names) {
+
+    var countries1 = topo.features;
+    countries = countries1.filter(function(d) {
+
+    return names.some(function(n) {
+      if (d.id == n.id) return d.name;
+    })});
+
+  let mouseOver = function(d,i) {
+
+      div.transition()        
+            .duration(200)      
+            .style("opacity", .5);      
+        div .html(d.properties.name + " : "+  + d.Total)   
+            .style("left", d3.event.pageX + "px")     
+            .style("top", d3.event.pageY + "px");
+
+    d3.selectAll(".Country")
+      .transition()
+      .duration(200)
+      .style("opacity", .5)
+    d3.select(this)
+      .transition()
+      .duration(200)
+      .style("opacity", 1)
+      .style("stroke", "black")
+  }
+
+  let mouseLeave = function(d) {
+    div.transition()        
+              .duration(200)      
+              .style("opacity", 0); 
+    d3.selectAll(".Country")
+      .transition()
+      .duration(200)
+      .style("opacity", .8)
+    d3.select(this)
+      .transition()
+      .duration(200)
+      .style("stroke", "transparent")
+  }
+
+
+  // Draw the map
+  svg.append("g")
+    .selectAll("path")
+    .data(topo.features)
+    .enter()
+    .append("path")
+      // draw each country
+      .attr("d", d3.geoPath()
+        .projection(projection)
+      )
+      // set the color of each country
+      .attr("fill", function (d) {
+        
+        d.Total = data.get(d.id) || 0;
+        return colorScale(d.Total);
+      })
+      .style("stroke", "gray")
+      .attr("class", function(d){ return "Country" } )
+      .attr("name", function(d) { return d.properties.name;})
+      .style("opacity", 1)
+      .on("mouseover", mouseOver )
+      .on("mouseleave", mouseLeave )
+
+    var countries1 = topo.features;
+ 
+    annotations = countries1.filter(function(d) {
+
+    console.log(d.properties.name,path.centroid(d.geometry))
+
+    });  
+ 
+
+
+
+    }
+
+  update()
+
+</script>
+</body>
+</html>
